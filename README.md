@@ -1,1 +1,2 @@
-# BE_Trottinette_Dy_Heusse
+# BE Trottinette
+## Dy & Heusse
