@@ -38,9 +38,9 @@ lib : bibliothèque qui gère les périphériques du STM : Drivers_STM32F103_107
 //=================================================================================================================
 
 
-#define Te 5e-4
+#define Te 1e-4
 #define t1 2e-3
-#define ti 0.0014
+#define ti (0.0014*2)
 
 // Choix de la fréquence PWM (en kHz)
 #define FPWM_Khz 20.0
@@ -116,8 +116,10 @@ Conf_IT_Principale_Systick(IT_Principale, Te_us);
 // 					FONCTION D'INTERRUPTION PRINCIPALE SYSTICK
 //=================================================================================================================
 int Courant_1,Cons_In,Pot_In;
-float I1_val,Vin_val,epsilon;
-float out,uk_prev, yk_prev;
+float I1_val,Vin_val,epsilon,out,out_sat;
+float uk_prev = 0.0;
+float yk_prev = 0.0;
+int r_cyc;
 
 float a0=Te/(2*ti)-t1/ti;
 float a1=Te/(2*ti)+t1/ti;
@@ -125,8 +127,6 @@ float a1=Te/(2*ti)+t1/ti;
 void IT_Principale(void)
 {
 	Cons_In=Entree_10V();
-	R_Cyc_1(Cons_In);
-	R_Cyc_2(Cons_In);
 
 	Courant_1=I1();				// Lecture de la valeur du courant I1 -> retour
 	Pot_In=Entree_3V3();	// Lecture de la valeur de la tension du potentiomètre -> consigne
@@ -136,7 +136,26 @@ void IT_Principale(void)
 	Vin_val = (float)Pot_In*3.3/4096.0;
 	
 	epsilon=Vin_val-I1_val;
+	//epsilon = 0.1;
 	
 	out=a1*epsilon+a0*uk_prev+yk_prev;
+	
+	if(out < -0.5) {
+		out_sat = -0.5;
+	} else if(out > 0.5) {
+		out_sat = 0.5;
+	} else {
+		out_sat = out;
+	}
+	
+	uk_prev = epsilon;
+	yk_prev = out_sat;
+	
+	out_sat += 0.5;
+	
+	r_cyc = (int)(4096.0*out_sat);
+	
+	R_Cyc_1(r_cyc);
+	R_Cyc_2(r_cyc);
 }
 

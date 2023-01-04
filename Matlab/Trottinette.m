@@ -53,7 +53,7 @@ out = sim('ftbf',[0 0.2]);
 %plot(out.epsilon)
 
 % Transformée bilinéaire
-Te=5e-4 % 20us
+Te=100e-6 % 20us
 a1=Te/(2*ti)+t1/ti;
 a0=Te/(2*ti)-t1/ti;
 I=1/ti;
@@ -69,3 +69,5 @@ figure
 plot(out.i)
 figure
 plot(out.epsilon)
+figure
+plot(out.capteur)
