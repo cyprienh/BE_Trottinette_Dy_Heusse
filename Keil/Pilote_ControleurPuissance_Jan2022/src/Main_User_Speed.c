@@ -64,11 +64,18 @@ void IT_Principale(void);
 //=================================================================================================================*/
 
 
+// Courant
 float Te_us;
 
 float ti = 0.002899536956069;
 float t1;
 
+// Vitesse
+float ti_s = 0.004875803329532;
+float t_s = 0.027566444771090;
+float Te_s = 5e-3;
+
+int cnt_s = 0;
 
 #define s 100   // nombre total de samples après transition
 #define t 100		 // nombre de Te avant transition
@@ -80,6 +87,8 @@ int n = 0;
 int i;
 int j;
 float samples[s];
+
+int r_cyc;
 
 int main (void)
 {
@@ -115,14 +124,43 @@ LED_Codeur_Off;
 // Conf IT
 Conf_IT_Principale_Systick(IT_Principale, Te_us);
 
-	while(1)
-	{}
+	while(1) {
+	}
 
 }
 
+float a0,a1;
+float a0_s,a1_s; 
 
-
-
+void Trouver_tau(float I1_val) {
+	if (m < t) {
+		r_cyc = (int)4096*0.4; // 30%
+		m++;
+	} else if(n < s) {
+		r_cyc = (int)4096*0.6; // 70%
+		samples[n] = I1_val;
+		n++;
+	} else {
+		for(i = 2; i<s; i++) {
+			if(fabs(samples[i]-samples[i-1]) < 0.01) {
+				val_tau = samples[1] + 0.63 * (samples[i]-samples[1]);
+				for(j=1; j<i; j++) {
+					if(samples[j] > val_tau) {
+						tau_trouve = 1;
+						t1 = j * 1e-4;
+						a0=Te/(2*ti)-t1/ti;
+						a1=Te/(2*ti)+t1/ti;
+						
+						a0_s = Te_s/(2*ti_s)-t_s/ti_s;
+						a1_s = Te_s/(2*ti_s)+t_s/ti_s;
+						break;
+					}
+				}
+				break;						
+			}
+		}
+	}
+}
 
 //=================================================================================================================
 // 					FONCTION D'INTERRUPTION PRINCIPALE SYSTICK
@@ -131,9 +169,11 @@ int Courant_1,Cons_In,Pot_In;
 float I1_val,Vin_val,epsilon,out,out_sat;
 float uk_prev = 0.0;
 float yk_prev = 0.0;
-int r_cyc;
 
-float a0,a1;
+// Vitesse
+float V1_val, Speed_val;
+
+float epsilon_s, out_s, uk_prev_s, yk_prev_s, out_s_sat;
 
 void IT_Principale(void)
 {
@@ -142,17 +182,40 @@ void IT_Principale(void)
 	Courant_1=I1();				// Lecture de la valeur du courant I1 -> retour
 	Pot_In=Entree_3V3();	// Lecture de la valeur de la tension du potentiomètre -> consigne
 	
-	
+	// 3V max
+	// 0.33V min
 	// Valeurs en V
 	I1_val = (float)Courant_1*3.3/4096.0;
 	Vin_val = (float)Pot_In*3.3/4096.0;
-	
+	V1_val = (float)Cons_In*3.3/4096.0;
+	Speed_val = 0.696*V1_val-0.209;
+
 	if(tau_trouve) {
-	
-		epsilon=Vin_val-I1_val;
+		cnt_s++;
+		// Correcteur de vitesse
+		if(cnt_s >= Te_s/Te) {
+			cnt_s = 0;
+			epsilon_s=Vin_val-Speed_val;
+			out_s=a1_s*epsilon_s+a0_s*uk_prev_s+yk_prev_s;
+			
+			// Saturation
+			if(out_s < 0) {
+				out_s_sat = 0;
+			} else if(out_s > 3.3) {
+				out_s_sat = 3.3;
+			} else {
+				out_s_sat = out_s;
+			}
+			
+			uk_prev_s = epsilon_s;
+			yk_prev_s = out_s_sat;
+		}
 		
+		// Correcteur de courant
+		epsilon=out_s_sat-I1_val;
 		out=a1*epsilon+a0*uk_prev+yk_prev;
 		
+		// Saturation
 		if(out < -0.5) {
 			out_sat = -0.5;
 		} else if(out > 0.5) {
@@ -162,37 +225,14 @@ void IT_Principale(void)
 		}
 		
 		uk_prev = epsilon;
-		yk_prev = out_sat;
+		yk_prev = out_sat;	// On prend out_sat -> filtre anti-repliement
 		
-		out_sat += 0.5;
+		out_sat += 0.5;			// On était entre -0.5 & +0.5, on veut entre 0 et +1
 		
 		r_cyc = (int)(4096.0*out_sat);
 
 	} else {
-		if (m < t) {
-			r_cyc = (int)4096*0.4; // 30%
-			m++;
-		} else if(n < s) {
-			r_cyc = (int)4096*0.6; // 70%
-			samples[n] = I1_val;
-			n++;
-		} else {
-			for(i = 2; i<s; i++) {
-				if(fabs(samples[i]-samples[i-1]) < 0.01) {
-					val_tau = samples[1] + 0.63 * (samples[i]-samples[1]);
-					for(j=1; j<i; j++) {
-						if(samples[j] > val_tau) {
-							tau_trouve = 1;
-							t1 = j * 1e-4;
-							a0=Te/(2*ti)-t1/ti;
-							a1=Te/(2*ti)+t1/ti;
-							break;
-						}
-					}
-					break;						
-				}
-			}
-		}
+		Trouver_tau(I1_val);
 	}
 	
 	R_Cyc_1(r_cyc);

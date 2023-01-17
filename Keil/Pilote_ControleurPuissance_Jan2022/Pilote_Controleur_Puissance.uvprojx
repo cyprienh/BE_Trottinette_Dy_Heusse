@@ -384,9 +384,9 @@
           <GroupName>src</GroupName>
           <Files>
             <File>
-              <FileName>Main_User.c</FileName>
+              <FileName>Main_User_Speed.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\src\Main_User.c</FilePath>
+              <FilePath>.\src\Main_User_Speed.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -801,9 +801,9 @@
           <GroupName>src</GroupName>
           <Files>
             <File>
-              <FileName>Main_User.c</FileName>
+              <FileName>Main_User_Speed.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\src\Main_User.c</FilePath>
+              <FilePath>.\src\Main_User_Speed.c</FilePath>
             </File>
           </Files>
         </Group>

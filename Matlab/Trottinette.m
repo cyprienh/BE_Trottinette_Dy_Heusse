@@ -5,7 +5,7 @@ clear all
 close all
 
 % Paramètres de G(s)
-Kh=24;
+Kh=48;
 t1=2e-3;
 
 % Paramètres de F(s)
@@ -18,8 +18,8 @@ t3=4.84e-6;
 E=0;
 
 % Paramètre du correcteur P.I.
-%ti=(K*Kc*Kh)/(2*pi*400)
-ti=0.0014
+ti=(K*Kc*Kh)/(2*pi*400)
+%ti=0.0014
 %   On veut abs(Kglobal/(ti*p)) = 1 -> système simplifié
 %   p = j*w = j*2*pi*f
 
