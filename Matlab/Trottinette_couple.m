@@ -4,11 +4,11 @@
 clear all
 close all
 
-% Paramètres de G(s)
+% Parametres de G(s)
 Kh=48;
 t1=2e-3;
 
-% Paramètres de F(s)
+% Parametres de F(s)
 Kc=0.1042; % V/A
 K =1.457;
 t2=7.43e-5;
@@ -23,7 +23,7 @@ ti=(K*Kc*Kh)/(2*pi*400)
 %   On veut abs(Kglobal/(ti*p)) = 1 -> système simplifié
 %   p = j*w = j*2*pi*f
 
-% Définition de G, F et C
+% Definition de G, F et C
 s=tf('s');
 G=Kh/(1+t1*s);
 F=Kc*K/((1+t2*s)*(1+t3*s));
@@ -39,12 +39,12 @@ dF=dF{1};
 nC=nC{1};
 dC=dC{1};
 
-% Tracé du diagramme de Bode du système en Boucle Ouverte
-%bode(C*G*F)
+% Trace du diagramme de Bode du systeme en Boucle Ouverte
+bode(C*G*F)
 
-% Simulation du système en boucle fermée
+% Simulation du systeme en boucle fermee
 Kp = 0.6;
-out = sim('ftbf',[0 0.2]);
+out = sim('ftbf_old',[0 0.2]);
 %figure
 %plot(out.i)
 %figure
@@ -52,7 +52,7 @@ out = sim('ftbf',[0 0.2]);
 %figure
 %plot(out.epsilon)
 
-% Transformée bilinéaire
+% Transformee bilin�aire
 Te=100e-6 % 20us
 a1=Te/(2*ti)+t1/ti;
 a0=Te/(2*ti)-t1/ti;

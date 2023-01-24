@@ -26,24 +26,15 @@ clock.c : contient la fonction Clock_Configure() qui prépare le STM32. Lancée 
 lib : bibliothèque qui gère les périphériques du STM : Drivers_STM32F103_107_Jan_2015_b
 */
 
-
-
 #include "ToolBox_NRJ_v4.h"
 #include <math.h>
-
-
 
 //=================================================================================================================
 // 					USER DEFINE
 //=================================================================================================================
-
-
 #define Te 1e-4
-
 // Choix de la fréquence PWM (en kHz)
 #define FPWM_Khz 20.0
-						
-
 
 //==========END USER DEFINE========================================================================================
 
@@ -62,24 +53,21 @@ void IT_Principale(void);
 					La mise à jour du rapport cyclique se fait à la fréquence 1kHz.
 
 //=================================================================================================================*/
-
-
-// Courant
 float Te_us;
 
 float ti = 0.002899536956069;
 float t1;
 
-// Vitesse
+// Valeurs pour la commande de vitesse
 float ti_s = 0.004875803329532;
 float t_s = 0.027566444771090;
 float Te_s = 5e-3;
 
 int cnt_s = 0;
 
+// Auto-identification du tau du moteur (cf. Main_User.c)
 #define s 100   // nombre total de samples après transition
 #define t 100		 // nombre de Te avant transition
-
 char tau_trouve = 0;
 float val_tau;
 int m = 0;
@@ -90,43 +78,38 @@ float samples[s];
 
 int r_cyc;
 
-int main (void)
-{
-// !OBLIGATOIRE! //	
-Conf_Generale_IO_Carte();	
-	
+int main (void) {
+  // !OBLIGATOIRE! //	
+  Conf_Generale_IO_Carte();	
 
-	
-// ------------- Discret, choix de Te -------------------	
-Te_us=Te*1000000.0; // conversion en µs pour utilisation dans la fonction d'init d'interruption
+  // ------------- Discret, choix de Te -------------------	
+  Te_us=Te*1000000.0; // conversion en µs pour utilisation dans la fonction d'init d'interruption
 
-//______________ Ecrire ici toutes les CONFIGURATIONS des périphériques ________________________________	
-// Paramétrage ADC pour entrée analogique
-Conf_ADC();
-// Configuration de la PWM avec une porteuse Triangle, voie 1 & 2 activée, inversion voie 2
-Triangle (FPWM_Khz);
-Active_Voie_PWM(1);	
-Active_Voie_PWM(2);	
-Inv_Voie(2);
+  //______________ Ecrire ici toutes les CONFIGURATIONS des périphériques ________________________________	
+  // Paramétrage ADC pour entrée analogique
+  Conf_ADC();
+  // Configuration de la PWM avec une porteuse Triangle, voie 1 & 2 activée, inversion voie 2
+  Triangle (FPWM_Khz);
+  Active_Voie_PWM(1);	
+  Active_Voie_PWM(2);	
+  Inv_Voie(2);
 
-Start_PWM;
-R_Cyc_1(2048);  // positionnement à 50% par défaut de la PWM
-R_Cyc_2(2048);
+  Start_PWM;
+  R_Cyc_1(2048);  // positionnement à 50% par défaut de la PWM
+  R_Cyc_2(2048);
 
-// Activation LED
-LED_Courant_On;
-LED_PWM_On;
-LED_PWM_Aux_Off;
-LED_Entree_10V_On;
-LED_Entree_3V3_Off;
-LED_Codeur_Off;
+  // Activation LED
+  LED_Courant_On;
+  LED_PWM_On;
+  LED_PWM_Aux_Off;
+  LED_Entree_10V_On;
+  LED_Entree_3V3_Off;
+  LED_Codeur_Off;
 
-// Conf IT
-Conf_IT_Principale_Systick(IT_Principale, Te_us);
+  // Conf IT
+  Conf_IT_Principale_Systick(IT_Principale, Te_us);
 
-	while(1) {
-	}
-
+  while(1);
 }
 
 float a0,a1;
@@ -192,7 +175,7 @@ void IT_Principale(void)
 
 	if(tau_trouve) {
 		cnt_s++;
-		// Correcteur de vitesse
+		// Correcteur de vitesse - tous les Te_s
 		if(cnt_s >= Te_s/Te) {
 			cnt_s = 0;
 			epsilon_s=Vin_val-Speed_val;
